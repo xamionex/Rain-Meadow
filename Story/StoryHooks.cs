@@ -197,7 +197,7 @@ namespace RainMeadow
 
         private void TextPrompt_UpdateGameOverString(On.HUD.TextPrompt.orig_UpdateGameOverString orig, TextPrompt self, Options.ControlSetup.Preset controllerType)
         {
-            if (isStoryMode(out var _))
+            if (isStoryMode(out _))
             {
                 if (OnlineManager.lobby.isOwner)
                 {
@@ -217,14 +217,19 @@ namespace RainMeadow
         private void TextPrompt_Update(On.HUD.TextPrompt.orig_Update orig, TextPrompt self)
         {
             orig(self);
-            if (isStoryMode(out var _))
+            if (OnlineManager.lobby != null && self.currentlyShowing == TextPrompt.InfoID.GameOver)
             {
-                if (!OnlineManager.lobby.isOwner && self.currentlyShowing == TextPrompt.InfoID.GameOver)
+                if (ChatHud.chatButtonActive)
+                {
+                    self.restartNotAllowed = 1; // block GoToDeathScreen if we're typing
+                    return;
+                }
+                if (isStoryMode(out _) && !OnlineManager.lobby.isOwner)
                 {
                     self.restartNotAllowed = 1; // block clients from GoToDeathScreen
-                    bool touchedInput = false;
 
                     // let clients still have access to pause menu
+                    bool touchedInput = false;
                     for (int j = 0; j < self.hud.rainWorld.options.controls.Length; j++)
                     {
                         touchedInput = (self.hud.rainWorld.options.controls[j].gamePad || !self.defaultMapControls[j]) ? (touchedInput || self.hud.rainWorld.options.controls[j].GetButton(5) || RWInput.CheckPauseButton(0, inMenu: false)) : (touchedInput || self.hud.rainWorld.options.controls[j].GetButton(11));
@@ -234,7 +239,6 @@ namespace RainMeadow
                         self.gameOverMode = false;
                     }
                 }
-                self.restartNotAllowed = (ChatHud.chatButtonActive) ? 1 : 0; // block GoToDeathScreen if we're typing
             }
         }
 
@@ -705,7 +709,6 @@ namespace RainMeadow
                     if (OnlineManager.lobby.isOwner)
                     {
                         RainMeadow.Debug("Continue - host");
-                        gameMode.didStartCycle = true;
                     }
                     else if (!gameMode.didStartCycle)
                     {
@@ -756,7 +759,6 @@ namespace RainMeadow
             if (isStoryMode(out var gameMode))
             {
                 isPlayerReady = false;
-                gameMode.didStartCycle = false;
             }
         }
 

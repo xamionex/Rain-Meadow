@@ -55,6 +55,7 @@ namespace RainMeadow
             {
                 arena.arenaSittingOnlineOrder = new List<ushort>();
                 arena.returnToLobby = true;
+                arena.ResetGameTimer();
             }
 
             allSlugs = ArenaHelpers.AllSlugcats();
@@ -275,18 +276,18 @@ namespace RainMeadow
                 manager.arenaSitting.levelPlaylist = arena.playList;
 
             }
-
-            arena.playerResultColorizizerForMSCAndHighLobbyCount = UnityEngine.Random.Range(0, 4);
+            for (int i = 0; i < arena.arenaSittingOnlineOrder.Count; i++)
+            {
+               var currentPlayer =  ArenaHelpers.FindOnlinePlayerByFakePlayerNumber(arena, i);
+               arena.playerResultColors[currentPlayer.id.name] = UnityEngine.Random.Range(0, 4);
+            }
             arena.returnToLobby = false;
         }
 
         private void StartGame()
         {
             RainMeadow.DebugMe();
-            if (initiatedStartGameForClient) // no double clicking while I'm pulling you in
-            {
-                return;
-            }
+
 
             if (OnlineManager.lobby == null || !OnlineManager.lobby.isActive) return;
 
@@ -372,6 +373,10 @@ namespace RainMeadow
 
                 }
 
+                if (this.GetGameTypeSetup.playList.Count == 0)
+                {
+                    this.playButton.buttonBehav.greyedOut = true;
+                }
 
                 if (this.GetGameTypeSetup.playList.Count * this.GetGameTypeSetup.levelRepeats >= 0)
                 {

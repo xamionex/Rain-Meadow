@@ -80,6 +80,7 @@ namespace RainMeadow
             On.Menu.ArenaSettingsInterface.ctor += ArenaSettingsInterface_ctor;
 
             On.Player.ClassMechanicsSaint += Player_ClassMechanicsSaint;
+            On.Player.ctor += Player_ctor1;
 
         }
 
@@ -189,7 +190,23 @@ namespace RainMeadow
             {
                 var duration = 0.35f * (self.maxGodTime / 400f); // we'll see how that feels for now
                 self.godTimer = Mathf.Min(self.godTimer + duration, self.maxGodTime);
-                
+
+            }
+        }
+
+        private void Player_ctor1(On.Player.orig_ctor orig, Player self, AbstractCreature abstractCreature, World world)
+        {
+            orig(self, abstractCreature, world);
+            if (isArenaMode(out _))
+            {
+                if (self.slugcatStats is not null)
+                {
+                    if (self.slugcatStats.throwingSkill == 0)
+                    {
+                        self.slugcatStats.throwingSkill = 1; // don't let them push you around
+                        // Nightcat.ResetSneak(self);
+                    }
+                }
             }
         }
 
@@ -814,8 +831,8 @@ namespace RainMeadow
                     }
                     else
                     {
-                        
-                        self.portrait = new Menu.MenuIllustration(menu, self, "", "MultiplayerPortrait" + arena.playerResultColorizizerForMSCAndHighLobbyCount + (self.DeadPortraint ? "0" : "1") + "-" + player.playerClass.value, new Vector2(size.y / 2f, size.y / 2f), crispPixels: true, anchorCenter: true);
+
+                        self.portrait = new Menu.MenuIllustration(menu, self, "", "MultiplayerPortrait" + arena.playerResultColors[currentName.id.name] + (self.DeadPortraint ? "0" : "1") + "-" + player.playerClass.value, new Vector2(size.y / 2f, size.y / 2f), crispPixels: true, anchorCenter: true);
                     }
                     self.subObjects.Add(self.portrait);
                 }
@@ -949,7 +966,7 @@ namespace RainMeadow
                 self.AddPart(new Pointing(self));
                 self.AddPart(new ChatHud(self, session.game.cameras[0]));
                 self.AddPart(new SpectatorHud(self, session.game.cameras[0]));
-                self.AddPart(new ArenaPrepTimer(self, self.fContainers[0], arena));
+                self.AddPart(new ArenaPrepTimer(self, self.fContainers[0], arena, session));
                 self.AddPart(new OnlineHUD(self, session.game.cameras[0], arena));
 
             }
@@ -1149,12 +1166,9 @@ namespace RainMeadow
                     }
                 }
 
-                if (arena.setupTime == 0 && arena.countdownInitiatedHoldFire && arena.playerEnteredGame == arena.arenaSittingOnlineOrder.Count)
-                {
-                    arena.countdownInitiatedHoldFire = false; // in case we missed it during the timer HUD
-                }
 
-                if (!self.sessionEnded) {
+                if (!self.sessionEnded)
+                {
                     foreach (var s in self.arenaSitting.players)
                     {
                         var os = ArenaHelpers.FindOnlinePlayerByFakePlayerNumber(arena, s.playerNumber); // current player
